@@ -1,0 +1,184 @@
+---
+import Layout from '../components/Layout.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import CustomCursor from '../components/CustomCursor.astro';
+---
+
+<Layout title="Joel B Eapen" description="Joel B Eapen — Portfolio">
+  <!-- Custom Cursor -->
+  <CustomCursor />
+
+  <!-- Theme Toggle -->
+  <ThemeToggle />
+
+  <div class="layout">
+    <!-- LEFT PANEL: Hero / About -->
+    <main class="hero-panel" id="hero-panel">
+      <div class="hero-content">
+        <!-- Profile Image -->
+        <div class="profile-image-wrapper">
+          <img src="/images/profile.jpg" alt="Joel B Eapen" class="profile-image" />
+        </div>
+
+        <!-- Name -->
+        <h1 class="name" style="margin-bottom: 8px;">Joel B Eapen</h1>
+
+        <!-- Experience Subtitle -->
+        <p style="color: var(--text-bio); font-size: 14.5px; margin-bottom: 24px;">
+          Intern @ <a href="https://www.serendipitylabs.in/" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: inherit;">Serendipity Labs</a> |
+          Developer @ <a href="https://campusin.store" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: inherit;">CampusIn</a>
+        </p>
+
+        <!-- Bio -->
+        <div class="bio">
+          <p>
+            A full-stack developer with a strong focus on <span class="highlight">backend development</span> using
+            <span class="highlight">Node.js</span>, <span class="highlight">Express.js</span>, <span class="highlight">MongoDB</span>, and <span class="highlight">REST APIs</span>.
+          </p>
+          <p>
+            I've built authentication systems, management software, and I'm currently
+            developing <span class="highlight">CampusIn</span>, a food delivery platform for college campuses.
+            I enjoy designing scalable backends, secure APIs, and user-friendly web
+            applications that solve real-world problems.
+          </p>
+          <p>
+            Always learning, always building.
+          </p>
+        </div>
+
+        <!-- Social Links -->
+        <div class="social-links">
+          <a href="https://github.com/joel-eapen" class="social-link" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <span class="social-separator">·</span>
+          <a href="https://x.com/JoelBEapen1" class="social-link" target="_blank" rel="noopener noreferrer">Twitter</a>
+          <span class="social-separator">·</span>
+          <a href="https://www.linkedin.com/in/joel-b-eapen-86026422b/" class="social-link" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <span class="social-separator">·</span>
+          <a href="mailto:eapenjoel4@gmail.com" class="social-link">Email</a>
+        </div>
+
+        <!-- View My Work Button -->
+        <button class="view-work-btn" id="viewWorkBtn">
+          <span>View My Work</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="arrow-icon">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <!-- RIGHT PANEL: Work Section -->
+    <aside class="work-panel" id="work-panel">
+      <div class="work-content">
+        <!-- Back Button -->
+        <button class="back-btn" id="backBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span>Back</span>
+        </button>
+
+        <!-- Things I've Built -->
+        <section class="work-section">
+          <h2 class="section-title">THINGS I'VE BUILT</h2>
+          <div class="work-items">
+            <div class="work-item">
+              <a href="https://github.com/joel-eapen/CampusIn_Backend" class="work-item-name" target="_blank" rel="noopener noreferrer">CampusIn Backend</a>
+              <span class="work-item-desc"> — Backend infrastructure and APIs for CampusIn.</span>
+            </div>
+            <div class="work-item">
+              <a href="https://github.com/joel-eapen/javascript-amazon-project" class="work-item-name" target="_blank" rel="noopener noreferrer">Amazon Clone</a>
+              <span class="work-item-desc"> — A small clone of Amazon built using HTML, CSS and JavaScript (ES6+).</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Open Source -->
+        <section class="work-section">
+          <h2 class="section-title">OPEN SOURCE</h2>
+          <div class="work-items">
+            <div class="work-item">
+              <svg class="pr-merged-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="#a371f7"><path d="M5.45 5.154A4.25 4.25 0 0 0 9.25 7.5h1.378a2.251 2.251 0 1 1 0 1.5H9.25A5.734 5.734 0 0 1 5 7.123v3.505a2.25 2.25 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.95-.218ZM4.25 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm8-8a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM4.25 5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"></path></svg>
+              <a href="https://github.com/not-three-musketeers/erp-backend/pull/1" class="work-item-name" target="_blank" rel="noopener noreferrer">erp-backend</a>
+              <span class="work-item-desc"> — Added student creation API with Zod validation, duplicate checks & transactional DB writes. Refactored update API to admin-only access.</span>
+            </div>
+          </div>
+        </section>
+
+        <hr class="section-divider" />
+
+        <!-- Blogs -->
+        <section class="work-section">
+          <h2 class="section-title">BLOGS</h2>
+          <div class="work-items">
+            <div class="work-item">
+              <a href="/blog" class="work-item-name">Why can’t I forget her?</a>
+              <span class="work-item-desc"> — A personal reflection on moving forward and the lessons learned.</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+  </div>
+</Layout>
+
+<script>
+  // Portfolio interaction logic
+  let isWorkVisible = false;
+
+  function toggleWork() {
+    const heroPanel = document.getElementById('hero-panel');
+    const workPanel = document.getElementById('work-panel');
+    if (!heroPanel || !workPanel) return;
+
+    isWorkVisible = !isWorkVisible;
+
+    if (isWorkVisible) {
+      heroPanel.classList.add('shrink');
+      workPanel.classList.add('show');
+    } else {
+      workPanel.classList.remove('show');
+      heroPanel.classList.remove('shrink');
+    }
+  }
+
+  const viewWorkBtn = document.getElementById('viewWorkBtn');
+  const backBtn = document.getElementById('backBtn');
+  if (viewWorkBtn) viewWorkBtn.addEventListener('click', toggleWork);
+  if (backBtn) backBtn.addEventListener('click', toggleWork);
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isWorkVisible) {
+      toggleWork();
+    }
+  });
+
+  // Smooth stagger animation for work items when panel opens
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      const target = mutation.target as HTMLElement;
+      if (target.classList.contains('show')) {
+        const items = document.querySelectorAll<HTMLElement>('.work-item');
+        items.forEach((item, index) => {
+          item.style.opacity = '0';
+          item.style.transform = 'translateY(8px)';
+          item.style.transition = `opacity 0.4s ease ${0.4 + index * 0.05}s, transform 0.4s ease ${0.4 + index * 0.05}s`;
+
+          requestAnimationFrame(() => {
+            item.style.opacity = '1';
+            item.style.transform = 'translateY(0)';
+          });
+        });
+      }
+    });
+  });
+
+  const workPanel = document.getElementById('work-panel');
+  if (workPanel) {
+    observer.observe(workPanel, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
+</script>

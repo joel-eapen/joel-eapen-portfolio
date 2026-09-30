@@ -1,0 +1,132 @@
+---
+import Layout from '../components/Layout.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import CustomCursor from '../components/CustomCursor.astro';
+---
+
+<Layout title="Why can't I forget her? — Joel B Eapen" description="Why can't I forget her? — Joel B Eapen Blog">
+  <!-- Progress Bar -->
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Custom Cursor -->
+  <CustomCursor />
+
+  <!-- Theme Toggle -->
+  <ThemeToggle />
+
+  <div class="blog-container">
+    <a href="/" class="back-link">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back to Home
+    </a>
+
+    <h1 class="blog-title">Why can’t I forget her?</h1>
+
+    <div class="blog-content">
+      <p>Yes, you read that right, "Why can’t I forget her". Let’s call her "The Pahadi Girl (THP)". Our relationship was not a very long one (only lasted for 3 months), but still we both were very much attached.</p>
+
+      <p>She was one of the early friends that I got on campus, she was a girl full of joy and laughter. When thinking down the lane, I have a regret about whether I killed all of her joy or not. Sometimes I think deeply that the people you value the most are the people who easily go away from your life.</p>
+
+      <p>This relationship was all about learnings that is still deeply engraved into my heart. She always taught me that "LOVE is NOT enough for a relationship to sustain". She taught me the real meaning of PATIENCE. She taught me what flaws I had.</p>
+
+      <p>"The Pahadi Girl", if you are reading this, thank you for everything. Sometimes I wish to forget everything, each and every memory related to her. I am so dumb that I thought I could forget her during my semester break.</p>
+
+      <p>Sometimes those memories would rush into my brain and make me cry. Sometimes I would think why should I forget all the memories, because there were a lot of good memories too. If I try to forget everything, then there is no point of the good things that happened along the way.</p>
+
+      <p>Recently we broke completely apart and we never talked after 16th of June 2026. The last question I asked her was "Aap pahunch gaye", for that her answer was "Ha mai toh saturday pahunch gayi", that’s all the convo was dead right there, and I miss her smiling face till now.</p>
+
+      <p>Life should move on and I think the right thing I can do is to try to forget her……………………</p>
+
+      <p class="blog-signature">GoodBye "The Pahadi Girl"</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Progress Bar Logic
+  window.addEventListener('scroll', function () {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    let scrolled = (winScroll / height) * 100;
+    // Prevent divide by zero if page is short
+    if (height <= 0) scrolled = 0;
+    const progressBar = document.getElementById('progressBar');
+    if (progressBar) progressBar.style.width = scrolled + '%';
+  });
+</script>
+
+<style is:global>
+  /* Override body for simple blog scrolling instead of fixed layout */
+  body {
+    overflow-y: auto !important;
+    height: auto !important;
+  }
+
+  /* Progress Scroller */
+  .progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: transparent;
+    z-index: 1000;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--text-heading);
+    width: 0%;
+    transition: width 0.1s ease;
+  }
+
+  /* Blog Layout */
+  .blog-container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 100px 24px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-back);
+    text-decoration: none;
+    font-size: 14px;
+    margin-bottom: 48px;
+    transition: color 0.3s;
+  }
+
+  .back-link:hover {
+    color: var(--text-back-hover);
+  }
+
+  .blog-title {
+    color: var(--text-heading);
+    font-size: 2.2rem;
+    margin-bottom: 32px;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+
+  .blog-content {
+    color: var(--text-bio);
+    font-size: 1.1rem;
+    line-height: 1.8;
+  }
+
+  .blog-content p {
+    margin-bottom: 24px;
+  }
+
+  .blog-signature {
+    margin-top: 48px;
+    font-style: italic;
+    color: var(--text-desc);
+  }
+</style>

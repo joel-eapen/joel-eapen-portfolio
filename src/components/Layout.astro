@@ -1,0 +1,69 @@
+---
+import '../styles/style.css';
+
+export interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="author" content="Joel B Eapen" />
+    <meta name="theme-color" content="#18181B" />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <slot />
+
+    <script>
+      // ===== Circular Favicon from Profile Photo =====
+      (function generateFavicon() {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = '/images/profile.jpg';
+        img.onload = function () {
+          const size = 64;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+
+          // Draw circular clip
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.clip();
+
+          // Crop from center-bottom of image (where face is)
+          const srcSize = Math.min(img.width, img.height);
+          const srcX = (img.width - srcSize) / 2;
+          const srcY = img.height - srcSize; // bottom crop for face
+          ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, size, size);
+
+          // Set as favicon
+          const link =
+            document.querySelector("link[rel='icon']") ||
+            document.createElement('link');
+          (link as HTMLLinkElement).rel = 'icon';
+          (link as HTMLLinkElement).type = 'image/png';
+          (link as HTMLLinkElement).href = canvas.toDataURL('image/png');
+          document.head.appendChild(link);
+        };
+      })();
+    </script>
+  </body>
+</html>
