@@ -2,6 +2,22 @@
 import Layout from '../components/Layout.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import CustomCursor from '../components/CustomCursor.astro';
+import { getBooks } from '../lib/readtrack.ts';
+
+// Reading list fetched from the ReadTrack API at build time.
+const books = await getBooks();
+const finishedBooks = books.filter((b) => b.status === 'finished');
+const readingBooks = books.filter((b) => b.status === 'current_read');
+const wantToReadBooks = books.filter((b) => b.status === 'want_to_read');
+
+const readingGroups = [
+  { title: 'Currently Reading', items: readingBooks },
+  { title: 'Finished', items: finishedBooks },
+  { title: 'Want to Read', items: wantToReadBooks },
+].filter((g) => g.items.length > 0);
+
+// The book to spotlight below the intro (first currently-reading book).
+const currentBook = readingBooks[0] ?? null;
 ---
 
 <Layout title="Joel B Eapen" description="Joel B Eapen — Portfolio">
@@ -70,6 +86,31 @@ import CustomCursor from '../components/CustomCursor.astro';
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
+
+        <!-- Currently Reading spotlight (live from ReadTrack) -->
+        <a
+          class="now-reading"
+          id="nowReading"
+          href={currentBook ? `https://books.google.com/books?id=${currentBook.externalId}` : '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          hidden={!currentBook}
+        >
+          <div class="now-reading-cover" id="nowReadingCover">
+            {currentBook?.coverImg && (
+              <img src={currentBook.coverImg.replace('http://', 'https://')} alt={`Cover of ${currentBook.title}`} width="40" height="60" />
+            )}
+          </div>
+          <div class="now-reading-info">
+            <span class="now-reading-label">📖 Currently reading</span>
+            <span class="now-reading-title" id="nowReadingTitle">{currentBook?.title}</span>
+            <span class="now-reading-author" id="nowReadingAuthor">{currentBook?.author}</span>
+            <div class="now-reading-bar">
+              <div class="now-reading-fill" id="nowReadingFill" style={`width: ${currentBook?.percentRead ?? 0}%`}></div>
+            </div>
+            <span class="now-reading-pct" id="nowReadingPct">{currentBook?.percentRead ?? 0}% complete</span>
+          </div>
+        </a>
       </div>
     </main>
 
@@ -113,59 +154,50 @@ import CustomCursor from '../components/CustomCursor.astro';
           </div>
         </section>
 
-        <!-- What I've Read -->
+        <!-- What I've Read (prerendered at build time, refreshed live on load) -->
         <section class="work-section">
           <h2 class="section-title">WHAT I'VE READ</h2>
 
-          <div class="reading-group">
-            <h3 class="reading-group-title">Fiction &amp; Series</h3>
-            <div class="work-items reading-list">
-              <div class="book-item"><span class="book-title">Harry Potter (Books 1–5, 7)</span><span class="book-author">J.K. Rowling</span></div>
-              <div class="book-item"><span class="book-title">Percy Jackson &amp; the Olympians (Books 1–3)</span><span class="book-author">Rick Riordan</span></div>
-              <div class="book-item"><span class="book-title">The Alchemist</span><span class="book-author">Paulo Coelho</span></div>
-              <div class="book-item"><span class="book-title">1984</span><span class="book-author">George Orwell</span></div>
-              <div class="book-item"><span class="book-title">A Man Called Ove</span><span class="book-author">Fredrik Backman</span></div>
-              <div class="book-item"><span class="book-title">Ghachar Ghochar</span><span class="book-author">Vivek Shanbhag</span></div>
-              <div class="book-item"><span class="book-title">The Blue Umbrella</span><span class="book-author">Ruskin Bond</span></div>
-              <div class="book-item"><span class="book-title">The Night Train at Deoli</span><span class="book-author">Ruskin Bond</span></div>
-              <div class="book-item"><span class="book-title">Dollar Bahu</span><span class="book-author">Sudha Murty</span></div>
-              <div class="book-item"><span class="book-title">House of Cards</span><span class="book-author">Sudha Murty</span></div>
-              <div class="book-item"><span class="book-title">400 Days</span><span class="book-author">Chetan Bhagat</span></div>
-            </div>
-          </div>
-
-          <div class="reading-group">
-            <h3 class="reading-group-title">Thriller &amp; Mystery</h3>
-            <div class="work-items reading-list">
-              <div class="book-item"><span class="book-title">Murder on the Orient Express</span><span class="book-author">Agatha Christie</span></div>
-              <div class="book-item"><span class="book-title">And Then There Were None</span><span class="book-author">Agatha Christie</span></div>
-              <div class="book-item"><span class="book-title">The Murder of Roger Ackroyd</span><span class="book-author">Agatha Christie</span></div>
-              <div class="book-item"><span class="book-title">The Da Vinci Code</span><span class="book-author">Dan Brown</span></div>
-              <div class="book-item"><span class="book-title">Angels &amp; Demons</span><span class="book-author">Dan Brown</span></div>
-              <div class="book-item"><span class="book-title">The Lost Symbol</span><span class="book-author">Dan Brown</span></div>
-              <div class="book-item"><span class="book-title">The Silent Patient</span><span class="book-author">Alex Michaelides</span></div>
-              <div class="book-item"><span class="book-title">The Couple Next Door</span><span class="book-author">Shari Lapena</span></div>
-              <div class="book-item"><span class="book-title">One of Us Is Lying</span><span class="book-author">Karen M. McManus</span></div>
-              <div class="book-item"><span class="book-title">Headhunters</span><span class="book-author">Jo Nesbø</span></div>
-              <div class="book-item"><span class="book-title">The October List</span><span class="book-author">Jeffery Deaver</span></div>
-              <div class="book-item"><span class="book-title">The Grownup</span><span class="book-author">Gillian Flynn</span></div>
-              <div class="book-item"><span class="book-title">The New Year's Party</span><span class="book-author">Daniel Hurst</span></div>
-              <div class="book-item"><span class="book-title">The Little Men</span><span class="book-author">Megan Abbott</span></div>
-            </div>
-          </div>
-
-          <div class="reading-group">
-            <h3 class="reading-group-title">Non-fiction &amp; Memoir</h3>
-            <div class="work-items reading-list">
-              <div class="book-item"><span class="book-title">Shoe Dog</span><span class="book-author">Phil Knight</span></div>
-              <div class="book-item"><span class="book-title">Open: An Autobiography</span><span class="book-author">Andre Agassi</span></div>
-              <div class="book-item"><span class="book-title">That Will Never Work</span><span class="book-author">Marc Randolph</span></div>
-              <div class="book-item"><span class="book-title">Deep Work</span><span class="book-author">Cal Newport</span></div>
-              <div class="book-item"><span class="book-title">Elon Musk</span><span class="book-author">Ashlee Vance</span></div>
-              <div class="book-item"><span class="book-title">Do Epic Shit</span><span class="book-author">Ankur Warikoo</span></div>
-              <div class="book-item"><span class="book-title">I Am Malala</span><span class="book-author">Malala Yousafzai</span></div>
-              <div class="book-item"><span class="book-title">Letters from a Father to His Daughter</span><span class="book-author">Jawaharlal Nehru</span></div>
-            </div>
+          <div id="readingGroups">
+            {readingGroups.length === 0 ? (
+              <div class="work-items">
+                <div class="work-item">
+                  <span class="cooking-text">Something is cooking...</span>
+                </div>
+              </div>
+            ) : (
+              readingGroups.map((group) => (
+                <div class="reading-group">
+                  <h3 class="reading-group-title">{group.title}</h3>
+                  <div class="book-grid">
+                    {group.items.map((book) => (
+                      <div class="book-card">
+                        <div class="book-cover">
+                          {book.coverImg ? (
+                            <img
+                              src={book.coverImg.replace('http://', 'https://')}
+                              alt={`Cover of ${book.title}`}
+                              loading="lazy"
+                              width="48"
+                              height="72"
+                            />
+                          ) : (
+                            <div class="book-cover-fallback">{book.title.charAt(0)}</div>
+                          )}
+                        </div>
+                        <div class="book-meta">
+                          <span class="book-title">{book.title}</span>
+                          {book.author && <span class="book-author">{book.author}</span>}
+                          {book.status === 'current_read' && book.percentRead > 0 && (
+                            <span class="book-progress">{book.percentRead}% read</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </section>
 
@@ -244,6 +276,116 @@ import CustomCursor from '../components/CustomCursor.astro';
       attributeFilter: ['class'],
     });
   }
+
+  // ===== Live reading data: fetch fresh books from the server proxy on load =====
+  type Book = {
+    externalId: string;
+    title: string;
+    author: string;
+    coverImg: string;
+    status: 'finished' | 'current_read' | 'want_to_read';
+    percentRead: number;
+  };
+
+  const GROUP_ORDER: { key: Book['status']; title: string }[] = [
+    { key: 'current_read', title: 'Currently Reading' },
+    { key: 'finished', title: 'Finished' },
+    { key: 'want_to_read', title: 'Want to Read' },
+  ];
+
+  function httpsCover(url: string): string {
+    return url ? url.replace('http://', 'https://') : '';
+  }
+
+  function esc(s: string): string {
+    const d = document.createElement('div');
+    d.textContent = s ?? '';
+    return d.innerHTML;
+  }
+
+  function renderNowReading(books: Book[]) {
+    const el = document.getElementById('nowReading') as HTMLAnchorElement | null;
+    if (!el) return;
+    const current = books.find((b) => b.status === 'current_read');
+    if (!current) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    el.href = `https://books.google.com/books?id=${current.externalId}`;
+
+    const cover = document.getElementById('nowReadingCover');
+    if (cover) {
+      cover.innerHTML = current.coverImg
+        ? `<img src="${httpsCover(current.coverImg)}" alt="Cover of ${esc(current.title)}" width="40" height="60" />`
+        : '';
+    }
+    const title = document.getElementById('nowReadingTitle');
+    if (title) title.textContent = current.title;
+    const author = document.getElementById('nowReadingAuthor');
+    if (author) author.textContent = current.author;
+    const fill = document.getElementById('nowReadingFill');
+    if (fill) fill.style.width = `${current.percentRead ?? 0}%`;
+    const pct = document.getElementById('nowReadingPct');
+    if (pct) pct.textContent = `${current.percentRead ?? 0}% complete`;
+  }
+
+  function renderReadingGroups(books: Book[]) {
+    const container = document.getElementById('readingGroups');
+    if (!container) return;
+
+    const groups = GROUP_ORDER
+      .map((g) => ({ title: g.title, items: books.filter((b) => b.status === g.key) }))
+      .filter((g) => g.items.length > 0);
+
+    if (groups.length === 0) return; // keep whatever was prerendered
+
+    container.innerHTML = groups
+      .map(
+        (group) => `
+      <div class="reading-group">
+        <h3 class="reading-group-title">${esc(group.title)}</h3>
+        <div class="book-grid">
+          ${group.items
+            .map(
+              (book) => `
+            <div class="book-card">
+              <div class="book-cover">
+                ${
+                  book.coverImg
+                    ? `<img src="${httpsCover(book.coverImg)}" alt="Cover of ${esc(book.title)}" loading="lazy" width="48" height="72" />`
+                    : `<div class="book-cover-fallback">${esc(book.title.charAt(0))}</div>`
+                }
+              </div>
+              <div class="book-meta">
+                <span class="book-title">${esc(book.title)}</span>
+                ${book.author ? `<span class="book-author">${esc(book.author)}</span>` : ''}
+                ${book.status === 'current_read' && book.percentRead > 0 ? `<span class="book-progress">${book.percentRead}% read</span>` : ''}
+              </div>
+            </div>`
+            )
+            .join('')}
+        </div>
+      </div>`
+      )
+      .join('');
+  }
+
+  async function loadLiveBooks() {
+    try {
+      const res = await fetch('/api/books', { headers: { Accept: 'application/json' } });
+      if (!res.ok) return; // keep prerendered content on failure
+      const data = (await res.json()) as { books?: Book[] };
+      const books = data.books ?? [];
+      if (books.length === 0) return;
+      renderNowReading(books);
+      renderReadingGroups(books);
+    } catch {
+      /* offline / error: keep the prerendered content */
+    }
+  }
+
+  loadLiveBooks();
 </script>
 
 <style>
@@ -263,7 +405,7 @@ import CustomCursor from '../components/CustomCursor.astro';
 
   /* ===== What I've Read ===== */
   .reading-group {
-    margin-bottom: 22px;
+    margin-bottom: 24px;
   }
 
   .reading-group:last-child {
@@ -274,48 +416,181 @@ import CustomCursor from '../components/CustomCursor.astro';
     font-size: 13px;
     font-weight: 500;
     color: var(--text-heading);
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     letter-spacing: 0.01em;
   }
 
-  .reading-list {
-    gap: 8px;
+  .book-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
 
-  .book-item {
+  .book-card {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    align-items: center;
     gap: 14px;
-    font-size: 14px;
-    line-height: 1.5;
     transition: transform 0.2s ease;
   }
 
-  .book-item:hover {
+  .book-card:hover {
     transform: translateX(2px);
+  }
+
+  .book-cover {
+    flex-shrink: 0;
+    width: 48px;
+    height: 72px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--btn-bg-hover);
+    border: 1px solid var(--border-panel);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  }
+
+  .book-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .book-cover-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-section);
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  .book-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
   }
 
   .book-title {
     color: var(--text-highlight);
     font-weight: 500;
+    font-size: 14px;
+    line-height: 1.4;
   }
 
   .book-author {
     color: var(--text-desc);
     font-size: 13px;
-    white-space: nowrap;
-    flex-shrink: 0;
     font-family: 'JetBrains Mono', 'Courier New', monospace;
   }
 
-  @media (max-width: 480px) {
-    .book-item {
-      flex-direction: column;
-      gap: 2px;
-    }
-    .book-author {
-      white-space: normal;
-    }
+  .book-progress {
+    color: var(--text-section);
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    margin-top: 1px;
+  }
+
+  /* ===== Currently Reading spotlight (below the intro) ===== */
+  .now-reading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 28px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--btn-bg-hover);
+    text-decoration: none;
+    max-width: 400px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+    animation: fadeInUp 0.7s ease 0.6s forwards;
+    opacity: 0;
+  }
+
+  .now-reading[hidden] {
+    display: none;
+  }
+
+  .now-reading:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+  }
+
+  .now-reading-cover {
+    flex-shrink: 0;
+    width: 40px;
+    height: 60px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--bg);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .now-reading-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .now-reading-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .now-reading-label {
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-section);
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  .now-reading-title {
+    color: var(--text-heading);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .now-reading-author {
+    color: var(--text-desc);
+    font-size: 12.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .now-reading-bar {
+    margin-top: 6px;
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+  }
+
+  .now-reading-fill {
+    height: 100%;
+    background: var(--text-heading);
+    border-radius: 999px;
+    transition: width 0.6s ease;
+  }
+
+  .now-reading-pct {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-section);
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
   }
 </style>
