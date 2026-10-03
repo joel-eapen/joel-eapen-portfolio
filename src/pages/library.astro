@@ -1,0 +1,186 @@
+---
+import Layout from '../components/Layout.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import CustomCursor from '../components/CustomCursor.astro';
+import { getBooks } from '../lib/readtrack.ts';
+import '../styles/library.css';
+
+// Fetched at build time; refreshed live on load via /api/books.
+const books = await getBooks();
+
+const GROUPS = [
+  { key: 'current_read', title: 'Currently Reading' },
+  { key: 'finished', title: 'Finished' },
+  { key: 'want_to_read', title: 'Want to Read' },
+] as const;
+
+const readingGroups = GROUPS
+  .map((g) => ({ title: g.title, items: books.filter((b) => b.status === g.key) }))
+  .filter((g) => g.items.length > 0);
+
+const totalCount = books.length;
+---
+
+<Layout title="Library — Joel B Eapen" description="Books Joel B Eapen has read, is reading, and wants to read.">
+  <!-- Custom Cursor -->
+  <CustomCursor />
+
+  <!-- Theme Toggle -->
+  <ThemeToggle />
+
+  <div class="library-container">
+    <a href="/" class="back-link">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back to Home
+    </a>
+
+    <header class="library-header">
+      <h1 class="library-title">My Library</h1>
+      <p class="library-subtitle" id="libraryCount">
+        {totalCount > 0 ? `${totalCount} book${totalCount === 1 ? '' : 's'} tracked` : 'A living list of what I read'}
+      </p>
+      <p class="library-credit">
+        Powered by <a href="https://readtracked.netlify.app/" target="_blank" rel="noopener noreferrer">ReadTrack</a>,
+        a book-tracking app I built — served live through its public API.
+      </p>
+    </header>
+
+    <div id="libraryGroups">
+      {readingGroups.length === 0 ? (
+        <p class="library-empty">Nothing here yet — check back soon.</p>
+      ) : (
+        readingGroups.map((group) => (
+          <section class="reading-group">
+            <h2 class="reading-group-title">{group.title} <span class="group-count">{group.items.length}</span></h2>
+            <div class="book-grid">
+              {group.items.map((book) => (
+                <a
+                  class="book-card"
+                  href={`https://books.google.com/books?id=${book.externalId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <div class="book-cover">
+                    {book.coverImg ? (
+                      <img
+                        src={book.coverImg.replace('http://', 'https://')}
+                        alt={`Cover of ${book.title}`}
+                        loading="lazy"
+                        width="60"
+                        height="90"
+                      />
+                    ) : (
+                      <div class="book-cover-fallback">{book.title.charAt(0)}</div>
+                    )}
+                  </div>
+                  <div class="book-meta">
+                    <span class="book-title">{book.title}</span>
+                    {book.author && <span class="book-author">{book.author}</span>}
+                    {book.status === 'current_read' && (
+                      <div class="book-progress-wrap">
+                        <div class="book-progress-bar"><div class="book-progress-fill" style={`width: ${book.percentRead}%`}></div></div>
+                        <span class="book-progress-pct">{book.percentRead}% read</span>
+                      </div>
+                    )}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        ))
+      )}
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Refresh the library live from the server proxy on load.
+  type Book = {
+    externalId: string;
+    title: string;
+    author: string;
+    coverImg: string;
+    status: 'finished' | 'current_read' | 'want_to_read';
+    percentRead: number;
+  };
+
+  const GROUP_ORDER: { key: Book['status']; title: string }[] = [
+    { key: 'current_read', title: 'Currently Reading' },
+    { key: 'finished', title: 'Finished' },
+    { key: 'want_to_read', title: 'Want to Read' },
+  ];
+
+  function httpsCover(url: string): string {
+    return url ? url.replace('http://', 'https://') : '';
+  }
+
+  function esc(s: string): string {
+    const d = document.createElement('div');
+    d.textContent = s ?? '';
+    return d.innerHTML;
+  }
+
+  function renderLibrary(books: Book[]) {
+    const container = document.getElementById('libraryGroups');
+    if (!container) return;
+
+    const count = document.getElementById('libraryCount');
+    if (count) count.textContent = `${books.length} book${books.length === 1 ? '' : 's'} tracked`;
+
+    const groups = GROUP_ORDER
+      .map((g) => ({ title: g.title, items: books.filter((b) => b.status === g.key) }))
+      .filter((g) => g.items.length > 0);
+
+    if (groups.length === 0) return; // keep prerendered content
+
+    container.innerHTML = groups
+      .map(
+        (group) => `
+      <section class="reading-group">
+        <h2 class="reading-group-title">${esc(group.title)} <span class="group-count">${group.items.length}</span></h2>
+        <div class="book-grid">
+          ${group.items
+            .map(
+              (book) => `
+            <a class="book-card" href="https://books.google.com/books?id=${encodeURIComponent(book.externalId)}" target="_blank" rel="noopener noreferrer">
+              <div class="book-cover">
+                ${
+                  book.coverImg
+                    ? `<img src="${httpsCover(book.coverImg)}" alt="Cover of ${esc(book.title)}" loading="lazy" width="60" height="90" />`
+                    : `<div class="book-cover-fallback">${esc(book.title.charAt(0))}</div>`
+                }
+              </div>
+              <div class="book-meta">
+                <span class="book-title">${esc(book.title)}</span>
+                ${book.author ? `<span class="book-author">${esc(book.author)}</span>` : ''}
+                ${
+                  book.status === 'current_read'
+                    ? `<div class="book-progress-wrap"><div class="book-progress-bar"><div class="book-progress-fill" style="width:${book.percentRead}%"></div></div><span class="book-progress-pct">${book.percentRead}% read</span></div>`
+                    : ''
+                }
+              </div>
+            </a>`
+            )
+            .join('')}
+        </div>
+      </section>`
+      )
+      .join('');
+  }
+
+  (async function loadLibrary() {
+    try {
+      const res = await fetch('/api/books', { headers: { Accept: 'application/json' } });
+      if (!res.ok) return;
+      const data = (await res.json()) as { books?: Book[] };
+      const books = data.books ?? [];
+      if (books.length === 0) return;
+      renderLibrary(books);
+    } catch {
+      /* keep prerendered content */
+    }
+  })();
+</script>

@@ -1,0 +1,214 @@
+/* ===== Library page ===== */
+/* Unscoped (imported) so these rules apply to both the prerendered markup and
+   the DOM nodes injected by the client-side live refresh, which don't carry
+   Astro's scoped data-astro-cid attribute. */
+
+/* The library page scrolls normally (overrides the fixed home layout).
+   This file is imported only by library.astro, so targeting `body` is safe. */
+body {
+  overflow-y: auto !important;
+  height: auto !important;
+}
+
+.library-container {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 80px 24px 100px;
+}
+
+.library-container .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-back);
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 40px;
+  transition: color 0.3s;
+}
+
+.library-container .back-link:hover {
+  color: var(--text-back-hover);
+}
+
+.library-header {
+  margin-bottom: 44px;
+}
+
+.library-title {
+  color: var(--text-heading);
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.library-subtitle {
+  color: var(--text-desc);
+  font-size: 14px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+.library-empty {
+  color: var(--text-desc);
+  font-style: italic;
+}
+
+.reading-group {
+  margin-bottom: 44px;
+}
+
+.reading-group:last-child {
+  margin-bottom: 0;
+}
+
+.reading-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-section);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.group-count {
+  font-size: 11px;
+  color: var(--text-section);
+  background: var(--btn-bg-hover);
+  border: 1px solid var(--border-panel);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+/* Responsive grid of book cards */
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.book-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--border-panel);
+  border-radius: 10px;
+  background: transparent;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.book-card:hover {
+  border-color: var(--border-hover);
+  background: var(--btn-bg-hover);
+  transform: translateY(-2px);
+}
+
+.book-cover {
+  flex-shrink: 0;
+  width: 60px;
+  height: 90px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--btn-bg-hover);
+  border: 1px solid var(--border-panel);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.book-cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-section);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+.book-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.book-title {
+  color: var(--text-heading);
+  font-weight: 500;
+  font-size: 14.5px;
+  line-height: 1.35;
+}
+
+.book-author {
+  color: var(--text-desc);
+  font-size: 12.5px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+.book-progress-wrap {
+  margin-top: 6px;
+}
+
+.book-progress-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.book-progress-fill {
+  height: 100%;
+  background: var(--text-heading);
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.book-progress-pct {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-section);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+.library-credit {
+  margin-top: 14px;
+  color: var(--text-desc);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.library-credit a {
+  color: var(--text-heading);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--social-underline);
+  transition: text-decoration-color 0.2s ease;
+}
+
+.library-credit a:hover {
+  text-decoration-color: var(--social-underline-hover);
+}
+
+@media (max-width: 600px) {
+  .library-container {
+    padding: 60px 18px 80px;
+  }
+  .book-grid {
+    grid-template-columns: 1fr;
+  }
+}

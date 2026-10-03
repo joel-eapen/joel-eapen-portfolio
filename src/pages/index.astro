@@ -5,19 +5,10 @@ import CustomCursor from '../components/CustomCursor.astro';
 import { getBooks } from '../lib/readtrack.ts';
 
 // Reading list fetched from the ReadTrack API at build time.
+// The homepage only spotlights the currently-reading book below the intro;
+// the full library lives on /library.
 const books = await getBooks();
-const finishedBooks = books.filter((b) => b.status === 'finished');
-const readingBooks = books.filter((b) => b.status === 'current_read');
-const wantToReadBooks = books.filter((b) => b.status === 'want_to_read');
-
-const readingGroups = [
-  { title: 'Currently Reading', items: readingBooks },
-  { title: 'Finished', items: finishedBooks },
-  { title: 'Want to Read', items: wantToReadBooks },
-].filter((g) => g.items.length > 0);
-
-// The book to spotlight below the intro (first currently-reading book).
-const currentBook = readingBooks[0] ?? null;
+const currentBook = books.find((b) => b.status === 'current_read') ?? null;
 ---
 
 <Layout title="Joel B Eapen" description="Joel B Eapen — Portfolio">
@@ -87,13 +78,11 @@ const currentBook = readingBooks[0] ?? null;
           </svg>
         </button>
 
-        <!-- Currently Reading spotlight (live from ReadTrack) -->
+        <!-- Currently Reading spotlight (live from ReadTrack); links to the library -->
         <a
           class="now-reading"
           id="nowReading"
-          href={currentBook ? `https://books.google.com/books?id=${currentBook.externalId}` : '#'}
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/library"
           hidden={!currentBook}
         >
           <div class="now-reading-cover" id="nowReadingCover">
@@ -154,50 +143,14 @@ const currentBook = readingBooks[0] ?? null;
           </div>
         </section>
 
-        <!-- What I've Read (prerendered at build time, refreshed live on load) -->
+        <!-- What I've Read -> dedicated library page -->
         <section class="work-section">
           <h2 class="section-title">WHAT I'VE READ</h2>
-
-          <div id="readingGroups">
-            {readingGroups.length === 0 ? (
-              <div class="work-items">
-                <div class="work-item">
-                  <span class="cooking-text">Something is cooking...</span>
-                </div>
-              </div>
-            ) : (
-              readingGroups.map((group) => (
-                <div class="reading-group">
-                  <h3 class="reading-group-title">{group.title}</h3>
-                  <div class="book-grid">
-                    {group.items.map((book) => (
-                      <div class="book-card">
-                        <div class="book-cover">
-                          {book.coverImg ? (
-                            <img
-                              src={book.coverImg.replace('http://', 'https://')}
-                              alt={`Cover of ${book.title}`}
-                              loading="lazy"
-                              width="48"
-                              height="72"
-                            />
-                          ) : (
-                            <div class="book-cover-fallback">{book.title.charAt(0)}</div>
-                          )}
-                        </div>
-                        <div class="book-meta">
-                          <span class="book-title">{book.title}</span>
-                          {book.author && <span class="book-author">{book.author}</span>}
-                          {book.status === 'current_read' && book.percentRead > 0 && (
-                            <span class="book-progress">{book.percentRead}% read</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
+          <div class="work-items">
+            <div class="work-item">
+              <a href="/library" class="work-item-name">View My Library →</a>
+              <span class="work-item-desc"> — Everything I've read, am reading, and want to read.</span>
+            </div>
           </div>
         </section>
 
@@ -277,7 +230,7 @@ const currentBook = readingBooks[0] ?? null;
     });
   }
 
-  // ===== Live reading data: fetch fresh books from the server proxy on load =====
+  // ===== Live reading data: refresh the "currently reading" spotlight on load =====
   type Book = {
     externalId: string;
     title: string;
@@ -286,12 +239,6 @@ const currentBook = readingBooks[0] ?? null;
     status: 'finished' | 'current_read' | 'want_to_read';
     percentRead: number;
   };
-
-  const GROUP_ORDER: { key: Book['status']; title: string }[] = [
-    { key: 'current_read', title: 'Currently Reading' },
-    { key: 'finished', title: 'Finished' },
-    { key: 'want_to_read', title: 'Want to Read' },
-  ];
 
   function httpsCover(url: string): string {
     return url ? url.replace('http://', 'https://') : '';
@@ -312,7 +259,7 @@ const currentBook = readingBooks[0] ?? null;
       return;
     }
     el.hidden = false;
-    el.href = `https://books.google.com/books?id=${current.externalId}`;
+    el.href = '/library';
 
     const cover = document.getElementById('nowReadingCover');
     if (cover) {
@@ -330,47 +277,6 @@ const currentBook = readingBooks[0] ?? null;
     if (pct) pct.textContent = `${current.percentRead ?? 0}% complete`;
   }
 
-  function renderReadingGroups(books: Book[]) {
-    const container = document.getElementById('readingGroups');
-    if (!container) return;
-
-    const groups = GROUP_ORDER
-      .map((g) => ({ title: g.title, items: books.filter((b) => b.status === g.key) }))
-      .filter((g) => g.items.length > 0);
-
-    if (groups.length === 0) return; // keep whatever was prerendered
-
-    container.innerHTML = groups
-      .map(
-        (group) => `
-      <div class="reading-group">
-        <h3 class="reading-group-title">${esc(group.title)}</h3>
-        <div class="book-grid">
-          ${group.items
-            .map(
-              (book) => `
-            <div class="book-card">
-              <div class="book-cover">
-                ${
-                  book.coverImg
-                    ? `<img src="${httpsCover(book.coverImg)}" alt="Cover of ${esc(book.title)}" loading="lazy" width="48" height="72" />`
-                    : `<div class="book-cover-fallback">${esc(book.title.charAt(0))}</div>`
-                }
-              </div>
-              <div class="book-meta">
-                <span class="book-title">${esc(book.title)}</span>
-                ${book.author ? `<span class="book-author">${esc(book.author)}</span>` : ''}
-                ${book.status === 'current_read' && book.percentRead > 0 ? `<span class="book-progress">${book.percentRead}% read</span>` : ''}
-              </div>
-            </div>`
-            )
-            .join('')}
-        </div>
-      </div>`
-      )
-      .join('');
-  }
-
   async function loadLiveBooks() {
     try {
       const res = await fetch('/api/books', { headers: { Accept: 'application/json' } });
@@ -379,7 +285,6 @@ const currentBook = readingBooks[0] ?? null;
       const books = data.books ?? [];
       if (books.length === 0) return;
       renderNowReading(books);
-      renderReadingGroups(books);
     } catch {
       /* offline / error: keep the prerendered content */
     }
