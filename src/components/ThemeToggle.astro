@@ -21,23 +21,31 @@
 </button>
 
 <script>
+  // Theme lives on <html> (:root) so every subtree resolves the same
+  // variables from one origin — no body-inheritance hop that a
+  // composited/scrollable panel can fail to follow mid-transition.
+  const root = document.documentElement;
+
   // Load saved theme
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'light') {
-    document.body.setAttribute('data-theme', 'light');
+    root.setAttribute('data-theme', 'light');
   }
 
   function toggleTheme() {
-    const body = document.body;
-    const currentTheme = body.getAttribute('data-theme');
+    const currentTheme = root.getAttribute('data-theme');
 
     if (currentTheme === 'light') {
-      body.removeAttribute('data-theme');
+      root.removeAttribute('data-theme');
       localStorage.setItem('theme', 'dark');
     } else {
-      body.setAttribute('data-theme', 'light');
+      root.setAttribute('data-theme', 'light');
       localStorage.setItem('theme', 'light');
     }
+
+    // Force a synchronous recalc so no layer keeps presenting a stale
+    // (pre-toggle) frame after the switch.
+    void root.offsetHeight;
   }
 
   const themeToggle = document.getElementById('themeToggle');
