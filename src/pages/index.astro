@@ -78,28 +78,38 @@ const currentBook = books.find((b) => b.status === 'current_read') ?? null;
           </svg>
         </button>
 
-        <!-- Currently Reading spotlight (live from ReadTrack); links to the library -->
-        <a
-          class="now-reading"
-          id="nowReading"
-          href="/library"
-          hidden={!currentBook}
-        >
-          <div class="now-reading-cover" id="nowReadingCover">
-            {currentBook?.coverImg && (
-              <img src={currentBook.coverImg.replace('http://', 'https://')} alt={`Cover of ${currentBook.title}`} width="40" height="60" />
-            )}
-          </div>
-          <div class="now-reading-info">
-            <span class="now-reading-label">📖 Currently reading</span>
-            <span class="now-reading-title" id="nowReadingTitle">{currentBook?.title}</span>
-            <span class="now-reading-author" id="nowReadingAuthor">{currentBook?.author}</span>
-            <div class="now-reading-bar">
-              <div class="now-reading-fill" id="nowReadingFill" style={`width: ${currentBook?.percentRead ?? 0}%`}></div>
+        <!-- Currently Reading spotlight (live from ReadLog); links to the library -->
+        {currentBook ? (
+          <a class="now-reading" id="nowReading" href="/library">
+            <div class="now-reading-cover" id="nowReadingCover">
+              {currentBook.coverImg && (
+                <img src={currentBook.coverImg.replace('http://', 'https://')} alt={`Cover of ${currentBook.title}`} width="40" height="60" />
+              )}
             </div>
-            <span class="now-reading-pct" id="nowReadingPct">{currentBook?.percentRead ?? 0}% complete</span>
-          </div>
-        </a>
+            <div class="now-reading-info">
+              <span class="now-reading-label">📖 Currently reading</span>
+              <span class="now-reading-title" id="nowReadingTitle">{currentBook.title}</span>
+              <span class="now-reading-author" id="nowReadingAuthor">{currentBook.author}</span>
+              <div class="now-reading-bar">
+                <div class="now-reading-fill" id="nowReadingFill" style={`width: ${currentBook.percentRead ?? 0}%`}></div>
+              </div>
+              <span class="now-reading-pct" id="nowReadingPct">{currentBook.percentRead ?? 0}% complete</span>
+            </div>
+          </a>
+        ) : (
+          <a class="now-reading skeleton" id="nowReading" href="/library" aria-busy="true" aria-label="Loading currently reading">
+            <div class="now-reading-cover skeleton-cover" id="nowReadingCover"></div>
+            <div class="now-reading-info">
+              <span class="now-reading-label">📖 Currently reading</span>
+              <span class="skeleton-line skeleton-title" id="nowReadingTitle"></span>
+              <span class="skeleton-line skeleton-author" id="nowReadingAuthor"></span>
+              <div class="now-reading-bar">
+                <div class="now-reading-fill skeleton-fill" id="nowReadingFill" style="width: 42%"></div>
+              </div>
+              <span class="skeleton-line skeleton-pct" id="nowReadingPct"></span>
+            </div>
+          </a>
+        )}
       </div>
     </main>
 
@@ -260,33 +270,47 @@ const currentBook = books.find((b) => b.status === 'current_read') ?? null;
     }
     el.hidden = false;
     el.href = '/library';
+    el.classList.remove('skeleton');
+    el.removeAttribute('aria-busy');
 
     const cover = document.getElementById('nowReadingCover');
     if (cover) {
+      cover.classList.remove('skeleton-cover');
       cover.innerHTML = current.coverImg
         ? `<img src="${httpsCover(current.coverImg)}" alt="Cover of ${esc(current.title)}" width="40" height="60" />`
         : '';
     }
     const title = document.getElementById('nowReadingTitle');
-    if (title) title.textContent = current.title;
+    if (title) {
+      title.className = 'now-reading-title';
+      title.textContent = current.title;
+    }
     const author = document.getElementById('nowReadingAuthor');
-    if (author) author.textContent = current.author;
+    if (author) {
+      author.className = 'now-reading-author';
+      author.textContent = current.author;
+    }
     const fill = document.getElementById('nowReadingFill');
-    if (fill) fill.style.width = `${current.percentRead ?? 0}%`;
+    if (fill) {
+      fill.classList.remove('skeleton-fill');
+      fill.style.width = `${current.percentRead ?? 0}%`;
+    }
     const pct = document.getElementById('nowReadingPct');
-    if (pct) pct.textContent = `${current.percentRead ?? 0}% complete`;
+    if (pct) {
+      pct.className = 'now-reading-pct';
+      pct.textContent = `${current.percentRead ?? 0}% complete`;
+    }
   }
 
   async function loadLiveBooks() {
     try {
       const res = await fetch('/api/books', { headers: { Accept: 'application/json' } });
-      if (!res.ok) return; // keep prerendered content on failure
+      if (!res.ok) return; // keep prerendered / skeleton content on failure
       const data = (await res.json()) as { books?: Book[] };
       const books = data.books ?? [];
-      if (books.length === 0) return;
       renderNowReading(books);
     } catch {
-      /* offline / error: keep the prerendered content */
+      /* offline / error: keep the prerendered / skeleton content */
     }
   }
 
@@ -497,5 +521,51 @@ const currentBook = books.find((b) => b.status === 'current_read') ?? null;
     font-size: 11px;
     color: var(--text-section);
     font-family: 'JetBrains Mono', 'Courier New', monospace;
+  }
+
+  /* ===== Currently Reading skeleton ===== */
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
+
+  .now-reading.skeleton {
+    opacity: 1;
+    animation: fadeInUp 0.7s ease 0.6s forwards, skeleton-pulse 1.6s ease-in-out infinite;
+  }
+
+  .skeleton-cover {
+    background: var(--border);
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+  }
+
+  .skeleton-line {
+    display: block;
+    border-radius: 4px;
+    background: var(--border);
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+  }
+
+  .skeleton-title {
+    height: 14px;
+    width: 72%;
+    margin-top: 2px;
+  }
+
+  .skeleton-author {
+    height: 12px;
+    width: 48%;
+    margin-top: 4px;
+  }
+
+  .skeleton-pct {
+    height: 10px;
+    width: 30%;
+    margin-top: 6px;
+  }
+
+  .skeleton-fill {
+    background: var(--border-hover) !important;
+    opacity: 0.6;
   }
 </style>

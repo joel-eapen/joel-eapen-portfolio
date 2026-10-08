@@ -2,30 +2,30 @@
 import Layout from '../components/Layout.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import CustomCursor from '../components/CustomCursor.astro';
-import { getBooks } from '../lib/readtrack.ts';
+import { getBooks, BOOK_CATEGORIES, getCategory } from '../lib/readtrack.ts';
 import '../styles/library.css';
 
 // Fetched at build time; refreshed live on load via /api/books.
 const books = await getBooks();
 
-const GROUPS = [
-  { key: 'current_read', title: 'Currently Reading' },
-  { key: 'finished', title: 'Finished' },
-  { key: 'want_to_read', title: 'Want to Read' },
-] as const;
-
-const readingGroups = GROUPS
-  .map((g) => ({ title: g.title, items: books.filter((b) => b.status === g.key) }))
-  .filter((g) => g.items.length > 0);
-
 const totalCount = books.length;
+
+// compute category counts for SSR chips (stable order)
+const categoryCounts = BOOK_CATEGORIES.map((cat) => ({
+  name: cat,
+  count: books.filter((b) => b.category === cat).length,
+})).filter((c) => c.count > 0);
+
+const statusCounts = [
+  { key: 'all', label: 'All', count: totalCount },
+  { key: 'current_read', label: 'Currently Reading', count: books.filter((b) => b.status === 'current_read').length },
+  { key: 'finished', label: 'Finished', count: books.filter((b) => b.status === 'finished').length },
+  { key: 'want_to_read', label: 'Want to Read', count: books.filter((b) => b.status === 'want_to_read').length },
+].filter((s) => s.key === 'all' || s.count > 0);
 ---
 
 <Layout title="Library — Joel B Eapen" description="Books Joel B Eapen has read, is reading, and wants to read.">
-  <!-- Custom Cursor -->
   <CustomCursor />
-
-  <!-- Theme Toggle -->
   <ThemeToggle />
 
   <div class="library-container">
@@ -40,136 +40,252 @@ const totalCount = books.length;
     <header class="library-header">
       <h1 class="library-title">My Library</h1>
       <p class="library-subtitle" id="libraryCount">
-        {totalCount > 0 ? `${totalCount} book${totalCount === 1 ? '' : 's'} tracked` : 'A living list of what I read'}
+        {totalCount > 0 ? `${totalCount} book${totalCount === 1 ? '' : 's'} • ${categoryCounts.length} categories` : 'A living list of what I read'}
       </p>
       <p class="library-credit">
-        Powered by <a href="https://readtracked.netlify.app/" target="_blank" rel="noopener noreferrer">ReadTrack</a>,
+        Powered by <a href="https://readlog.joeleapen.tech" target="_blank" rel="noopener noreferrer">ReadLog</a>,
         a book-tracking app I built — served live through its public API.
       </p>
     </header>
 
+    <!-- Filters -->
+    <div class="library-controls" id="libraryControls">
+      <div class="filter-row" role="tablist" aria-label="Filter by status">
+        {statusCounts.map((s) => (
+          <button
+            class={`filter-chip ${s.key === 'all' ? 'active' : ''}`}
+            data-filter-type="status"
+            data-filter-value={s.key}
+            role="tab"
+            aria-selected={s.key === 'all' ? 'true' : 'false'}
+          >
+            {s.label} <span class="chip-count">{s.count}</span>
+          </button>
+        ))}
+      </div>
+
+      <div class="filter-row category-row" role="tablist" aria-label="Filter by category">
+        <button class="filter-chip active" data-filter-type="category" data-filter-value="all" role="tab" aria-selected="true">
+          All Categories
+        </button>
+        {categoryCounts.map((c) => (
+          <button class="filter-chip" data-filter-type="category" data-filter-value={c.name} role="tab" aria-selected="false">
+            {c.name} <span class="chip-count">{c.count}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+
     <div id="libraryGroups">
-      {readingGroups.length === 0 ? (
-        <p class="library-empty">Nothing here yet — check back soon.</p>
-      ) : (
-        readingGroups.map((group) => (
-          <section class="reading-group">
-            <h2 class="reading-group-title">{group.title} <span class="group-count">{group.items.length}</span></h2>
-            <div class="book-grid">
-              {group.items.map((book) => (
-                <a
-                  class="book-card"
-                  href={`https://books.google.com/books?id=${book.externalId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <div class="book-cover">
-                    {book.coverImg ? (
-                      <img
-                        src={book.coverImg.replace('http://', 'https://')}
-                        alt={`Cover of ${book.title}`}
-                        loading="lazy"
-                        width="60"
-                        height="90"
-                      />
-                    ) : (
-                      <div class="book-cover-fallback">{book.title.charAt(0)}</div>
-                    )}
-                  </div>
-                  <div class="book-meta">
-                    <span class="book-title">{book.title}</span>
-                    {book.author && <span class="book-author">{book.author}</span>}
-                    {book.status === 'current_read' && (
-                      <div class="book-progress-wrap">
-                        <div class="book-progress-bar"><div class="book-progress-fill" style={`width: ${book.percentRead}%`}></div></div>
-                        <span class="book-progress-pct">{book.percentRead}% read</span>
-                      </div>
-                    )}
-                  </div>
-                </a>
-              ))}
+      {books.length === 0 ? (
+        <div class="skeleton-library" aria-busy="true" aria-label="Loading library">
+          {[0,1,2,3,4,5].map(() => (
+            <div class="book-card skeleton-card" aria-hidden="true">
+              <div class="book-cover skeleton-cover"></div>
+              <div class="book-meta">
+                <span class="skeleton-line skeleton-book-title"></span>
+                <span class="skeleton-line skeleton-book-author"></span>
+                <span class="skeleton-line skeleton-cat"></span>
+              </div>
             </div>
-          </section>
-        ))
+          ))}
+        </div>
+      ) : (
+        <div class="book-grid" id="bookGrid">
+          {books.map((book) => (
+            <a
+              class="book-card"
+              href={`https://books.google.com/books?id=${book.externalId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-status={book.status}
+              data-category={book.category}
+            >
+              <div class="book-cover">
+                {book.coverImg ? (
+                  <img
+                    src={book.coverImg.replace('http://', 'https://')}
+                    alt={`Cover of ${book.title}`}
+                    loading="lazy"
+                    width="180"
+                    height="270"
+                  />
+                ) : (
+                  <div class="book-cover-fallback">{book.title.charAt(0)}</div>
+                )}
+                <span class="book-category-badge">{book.category}</span>
+                {book.status === 'current_read' && <span class="book-status-badge">Reading • {book.percentRead}%</span>}
+                {book.status === 'want_to_read' && <span class="book-status-badge want">Wishlist</span>}
+              </div>
+              <div class="book-meta">
+                <span class="book-title">{book.title}</span>
+                {book.author && <span class="book-author">{book.author}</span>}
+                {book.status === 'current_read' && (
+                  <div class="book-progress-wrap">
+                    <div class="book-progress-bar"><div class="book-progress-fill" style={`width: ${book.percentRead}%`}></div></div>
+                  </div>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
       )}
+      <p class="library-empty" id="filterEmpty" hidden>No books match this filter — try another category.</p>
     </div>
   </div>
 </Layout>
 
 <script>
-  // Refresh the library live from the server proxy on load.
   type Book = {
     externalId: string;
     title: string;
     author: string;
     coverImg: string;
     status: 'finished' | 'current_read' | 'want_to_read';
+    category: string;
     percentRead: number;
   };
 
-  const GROUP_ORDER: { key: Book['status']; title: string }[] = [
-    { key: 'current_read', title: 'Currently Reading' },
-    { key: 'finished', title: 'Finished' },
-    { key: 'want_to_read', title: 'Want to Read' },
-  ];
+  const BOOK_CATEGORIES = [
+    'Fantasy & Adventure',
+    'Mystery & Thriller',
+    'Biography & Memoir',
+    'Self-Help & Business',
+    'Fiction & Classics',
+  ] as const;
+
+  function getCategory(title: string, author: string): string {
+    const hay = `${title} ${author}`.toLowerCase();
+    const has = (...keys: string[]) => keys.some((k) => hay.includes(k));
+    if (has('harry potter','percy jackson','sea of monsters',"titan's curse",'lightning thief','rick riordan','j.k. rowling','j. k. rowling','tolkien','hobbit','lord of the rings','narnia','wizard','magic','dragon','chronicles','demigod','olympian','fantasy','adventure','quest','prophecy','myth')) return 'Fantasy & Adventure';
+    if (has('agatha','dan brown','jeffery deaver','shari lapena','alex michaelides','jo nesbo','karen mcmanus','blake crouch','dark matter','one of us is lying','couple next door','lost symbol','roger ackroyd','october list','da vinci','headhunters','then there were none','silent patient','angels & demons','angels and demons','orient express','murder','mystery','thriller','detective','crime','killing','death','patient','psychological','suspense','homicide','whodunit')) return 'Mystery & Thriller';
+    if (has('elon musk','shoe dog','i am malala','malala','phil knight','andre agassi','that will never work','marc randolph','ashlee vance','letters from a father','biography','memoir','autobiography','diary','my life','my story','becoming','born a crime','steve jobs','obama')) return 'Biography & Memoir';
+    if (has('do epic','warikoo','deep work','cal newport','atomic habits','habit','mindset','psychology','thinking, fast','sapiens','business','startup','entrepreneur','leadership','productivity','self-help','self help','motivation','success','rich dad','lean startup','zero to one')) return 'Self-Help & Business';
+    return 'Fiction & Classics';
+  }
 
   function httpsCover(url: string): string {
     return url ? url.replace('http://', 'https://') : '';
   }
-
   function esc(s: string): string {
     const d = document.createElement('div');
     d.textContent = s ?? '';
     return d.innerHTML;
   }
 
+  let activeStatus = 'all';
+  let activeCategory = 'all';
+  let allBooks: Book[] = [];
+
+  function applyFilters() {
+    const cards = document.querySelectorAll<HTMLAnchorElement>('#bookGrid .book-card');
+    let visible = 0;
+    cards.forEach((card) => {
+      const s = card.dataset.status ?? '';
+      const c = card.dataset.category ?? '';
+      const matchStatus = activeStatus === 'all' || s === activeStatus;
+      const matchCat = activeCategory === 'all' || c === activeCategory;
+      const show = matchStatus && matchCat;
+      (card as HTMLElement).style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    const empty = document.getElementById('filterEmpty');
+    if (empty) empty.hidden = visible !== 0;
+    // update counts hidden? keep
+  }
+
+  function setupFilters() {
+    document.querySelectorAll<HTMLButtonElement>('.filter-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.filterType;
+        const value = btn.dataset.filterValue ?? 'all';
+        if (type === 'status') activeStatus = value;
+        if (type === 'category') activeCategory = value;
+        // update active states per row
+        document.querySelectorAll<HTMLButtonElement>(`.filter-chip[data-filter-type="${type}"]`).forEach((b) => {
+          const isActive = b.dataset.filterValue === value;
+          b.classList.toggle('active', isActive);
+          b.setAttribute('aria-selected', String(isActive));
+        });
+        applyFilters();
+      });
+    });
+  }
+
   function renderLibrary(books: Book[]) {
     const container = document.getElementById('libraryGroups');
     if (!container) return;
-
     const count = document.getElementById('libraryCount');
-    if (count) count.textContent = `${books.length} book${books.length === 1 ? '' : 's'} tracked`;
+    // enrich with category if missing (SSR already has it, but live data might not)
+    allBooks = books.map((b) => ({ ...b, category: (b.category as string) || getCategory(b.title, b.author) }));
 
-    const groups = GROUP_ORDER
-      .map((g) => ({ title: g.title, items: books.filter((b) => b.status === g.key) }))
-      .filter((g) => g.items.length > 0);
+    const cats = BOOK_CATEGORIES.map((cat) => ({ name: cat, count: allBooks.filter((b) => b.category === cat).length })).filter((c) => c.count > 0);
+    const total = allBooks.length;
+    if (count) count.textContent = total > 0 ? `${total} book${total === 1 ? '' : 's'} • ${cats.length} categories` : 'A living list of what I read';
 
-    if (groups.length === 0) return; // keep prerendered content
+    // rebuild category chips if needed (live counts may differ)
+    const catRow = document.querySelector('.category-row');
+    if (catRow) {
+      const existing = catRow.querySelectorAll<HTMLButtonElement>('.filter-chip[data-filter-type="category"]');
+      // rebuild to reflect live counts, keeping activeCategory
+      catRow.innerHTML = `<button class="filter-chip ${activeCategory === 'all' ? 'active' : ''}" data-filter-type="category" data-filter-value="all" role="tab" aria-selected="${activeCategory === 'all' ? 'true' : 'false'}">All Categories</button>` +
+        cats.map((c) => `<button class="filter-chip ${activeCategory === c.name ? 'active' : ''}" data-filter-type="category" data-filter-value="${esc(c.name)}" role="tab" aria-selected="${activeCategory === c.name ? 'true' : 'false'}">${esc(c.name)} <span class="chip-count">${c.count}</span></button>`).join('');
+    }
+    const statusRow = document.querySelector('.filter-row:not(.category-row)');
+    if (statusRow) {
+      const statusDefs: { key: string; label: string }[] = [
+        { key: 'all', label: 'All' },
+        { key: 'current_read', label: 'Currently Reading' },
+        { key: 'finished', label: 'Finished' },
+        { key: 'want_to_read', label: 'Want to Read' },
+      ];
+      const liveCounts: Record<string, number> = {
+        all: total,
+        current_read: allBooks.filter((b) => b.status === 'current_read').length,
+        finished: allBooks.filter((b) => b.status === 'finished').length,
+        want_to_read: allBooks.filter((b) => b.status === 'want_to_read').length,
+      };
+      statusRow.innerHTML = statusDefs
+        .filter((s) => s.key === 'all' || (liveCounts[s.key] ?? 0) > 0)
+        .map((s) => `<button class="filter-chip ${activeStatus === s.key ? 'active' : ''}" data-filter-type="status" data-filter-value="${s.key}" role="tab" aria-selected="${activeStatus === s.key ? 'true' : 'false'}">${esc(s.label)} <span class="chip-count">${liveCounts[s.key] ?? 0}</span></button>`)
+        .join('');
+      // re-bind
+      setupFilters();
+    }
 
-    container.innerHTML = groups
-      .map(
-        (group) => `
-      <section class="reading-group">
-        <h2 class="reading-group-title">${esc(group.title)} <span class="group-count">${group.items.length}</span></h2>
-        <div class="book-grid">
-          ${group.items
-            .map(
-              (book) => `
-            <a class="book-card" href="https://books.google.com/books?id=${encodeURIComponent(book.externalId)}" target="_blank" rel="noopener noreferrer">
+    if (allBooks.length === 0) {
+      container.innerHTML = '<p class="library-empty">Nothing here yet — check back soon.</p>';
+      return;
+    }
+
+    // ensure grid exists
+    let grid = document.getElementById('bookGrid');
+    if (!grid) {
+      container.innerHTML = '<div class="book-grid" id="bookGrid"></div><p class="library-empty" id="filterEmpty" hidden>No books match this filter — try another category.</p>';
+      grid = document.getElementById('bookGrid');
+      if (!grid) return;
+    }
+    grid.innerHTML = allBooks.map((book) => `
+            <a class="book-card" href="https://books.google.com/books?id=${encodeURIComponent(book.externalId)}" target="_blank" rel="noopener noreferrer" data-status="${esc(book.status)}" data-category="${esc(book.category)}">
               <div class="book-cover">
-                ${
-                  book.coverImg
-                    ? `<img src="${httpsCover(book.coverImg)}" alt="Cover of ${esc(book.title)}" loading="lazy" width="60" height="90" />`
-                    : `<div class="book-cover-fallback">${esc(book.title.charAt(0))}</div>`
-                }
+                ${book.coverImg ? `<img src="${httpsCover(book.coverImg)}" alt="Cover of ${esc(book.title)}" loading="lazy" width="180" height="270" />` : `<div class="book-cover-fallback">${esc(book.title.charAt(0))}</div>`}
+                <span class="book-category-badge">${esc(book.category)}</span>
+                ${book.status === 'current_read' ? `<span class="book-status-badge">Reading • ${book.percentRead}%</span>` : ''}
+                ${book.status === 'want_to_read' ? `<span class="book-status-badge want">Wishlist</span>` : ''}
               </div>
               <div class="book-meta">
                 <span class="book-title">${esc(book.title)}</span>
                 ${book.author ? `<span class="book-author">${esc(book.author)}</span>` : ''}
-                ${
-                  book.status === 'current_read'
-                    ? `<div class="book-progress-wrap"><div class="book-progress-bar"><div class="book-progress-fill" style="width:${book.percentRead}%"></div></div><span class="book-progress-pct">${book.percentRead}% read</span></div>`
-                    : ''
-                }
+                ${book.status === 'current_read' ? `<div class="book-progress-wrap"><div class="book-progress-bar"><div class="book-progress-fill" style="width:${book.percentRead}%"></div></div></div>` : ''}
               </div>
-            </a>`
-            )
-            .join('')}
-        </div>
-      </section>`
-      )
-      .join('');
+            </a>`).join('');
+
+    // re-bind chip listeners after rebuild
+    setupFilters();
+    applyFilters();
   }
+
+  setupFilters();
 
   (async function loadLibrary() {
     try {

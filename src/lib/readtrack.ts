@@ -10,6 +10,16 @@ const API_BASE = 'https://readtrack-37hx.onrender.com';
 
 export type ReadingStatus = 'finished' | 'current_read' | 'want_to_read';
 
+export const BOOK_CATEGORIES = [
+  'Fantasy & Adventure',
+  'Mystery & Thriller',
+  'Biography & Memoir',
+  'Self-Help & Business',
+  'Fiction & Classics',
+] as const;
+
+export type BookCategory = (typeof BOOK_CATEGORIES)[number];
+
 export interface Book {
   externalId: string;
   title: string;
@@ -17,6 +27,7 @@ export interface Book {
   coverImg: string;
   isbn: string;
   status: ReadingStatus;
+  category: BookCategory;
   totalPages: number;
   pagesRead: number;
   percentRead: number;
@@ -46,6 +57,50 @@ function normalizeStatus(status: string | undefined): ReadingStatus {
   return VALID_STATUSES.includes(status as ReadingStatus)
     ? (status as ReadingStatus)
     : 'want_to_read';
+}
+
+export function getCategory(title: string, author: string): BookCategory {
+  const hay = `${title} ${author}`.toLowerCase();
+
+  // helper for substring match
+  const has = (...keys: string[]) => keys.some((k) => hay.includes(k));
+
+  // Fantasy & Adventure – catches any future fantasy/adventure/sci-fi titles
+  if (has(
+    'harry potter', 'percy jackson', 'sea of monsters', "titan's curse", 'lightning thief', 'rick riordan',
+    'j.k. rowling', 'j. k. rowling', 'tolkien', 'hobbit', 'lord of the rings', 'narnia', 'wizard', 'magic',
+    'dragon', 'chronicles', 'demigod', 'olympian', 'fantasy', 'adventure', 'quest', 'prophecy', 'myth'
+  )) return 'Fantasy & Adventure';
+
+  // Sci-fi thriller like Dark Matter should visually sit with mystery/thriller, but
+  // generic sci-fi keywords also map to Fantasy & Adventure if not already caught above.
+  // Mystery & Thriller – broad crime/mystery/thriller detection for future books
+  if (has(
+    'agatha', 'dan brown', 'jeffery deaver', 'shari lapena', 'alex michaelides', 'jo nesbo', 'karen mcmanus',
+    'blake crouch', 'dark matter', 'one of us is lying', 'couple next door', 'lost symbol', 'roger ackroyd',
+    'october list', 'da vinci', 'headhunters', 'then there were none', 'silent patient', 'angels & demons',
+    'angels and demons', 'orient express', 'murder', 'mystery', 'thriller', 'detective', 'crime', 'killing',
+    'death', 'patient', 'psychological', 'suspense', 'homicide', 'whodunit'
+  )) return 'Mystery & Thriller';
+
+  // Biography & Memoir – real people, memoir keywords
+  if (has(
+    'elon musk', 'shoe dog', 'i am malala', 'malala', 'phil knight', 'andre agassi', 'that will never work',
+    'marc randolph', 'ashlee vance', 'letters from a father', 'biography', 'memoir', 'autobiography',
+    'diary', 'my life', 'my story', 'becoming', 'born a crime', 'steve jobs', 'obama'
+  )) return 'Biography & Memoir';
+
+  // Self-Help & Business – productivity, business, psychology
+  if (has(
+    'do epic', 'warikoo', 'deep work', 'cal newport', 'atomic habits', 'habit', 'mindset', 'psychology',
+    'thinking, fast', 'sapiens', 'business', 'startup', 'entrepreneur', 'leadership', 'productivity',
+    'self-help', 'self help', 'motivation', 'success', 'rich dad', 'lean startup', 'zero to one',
+    'shoe dog' // overlaps but already caught, keep here for completeness
+  )) return 'Self-Help & Business';
+
+  // Anything new that doesn't match above still gets a home – Fiction & Classics is the
+  // intentional catch-all so newly added books never appear uncategorized.
+  return 'Fiction & Classics';
 }
 
 /**
@@ -87,13 +142,16 @@ export async function getBooks(): Promise<Book[]> {
       if (books.length === 0) break;
 
       for (const b of books) {
+        const title = b.title?.trim() ?? 'Untitled';
+        const author = b.author?.trim() ?? '';
         all.push({
           externalId: b.externalId ?? '',
-          title: b.title?.trim() ?? 'Untitled',
-          author: b.author?.trim() ?? '',
+          title,
+          author,
           coverImg: b.coverImg ?? '',
           isbn: b.isbn ?? '',
           status: normalizeStatus(b.status),
+          category: getCategory(title, author),
           totalPages: b.totalPages ?? 0,
           pagesRead: b.pagesRead ?? 0,
           percentRead: b.percentRead ?? 0,
